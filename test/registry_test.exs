@@ -11,8 +11,9 @@ defmodule MServer.RegistryTest do
   end
 
   setup do
+    {:ok, sup} = MServer.Bucket.Supervisor.start_link
     {:ok, manager} = GenEvent.start_link
-    {:ok, registry} = MServer.Registry.start_link(manager)
+    {:ok, registry} = MServer.Registry.start_link(manager, sup)
 
     GenEvent.add_mon_handler(manager, Forwarder, self())
     {:ok, registry: registry}
@@ -28,13 +29,13 @@ defmodule MServer.RegistryTest do
   end
 
   test "removes bucket on crash", %{registry: registry} do
-    MServ.Registry.create(registry, "shopping")
-    {:ok, bucket} = MServ.Registry.lookup(registry, "shopping")
+    MServer.Registry.create(registry, "shopping")
+    {:ok, bucket} = MServer.Registry.lookup(registry, "shopping")
 
     # Kill the bucket and wait for the notification
     Process.exit(bucket, :shutdown)
     assert_receive {:exit, "shopping", ^bucket}
-    assert MServ.Registry.lookup(registry, "shopping") == :error
+    assert MServer.Registry.lookup(registry, "shopping") == :error
   end
 
   test "spawns buckets", %{registry: registry} do
