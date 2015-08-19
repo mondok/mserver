@@ -7,11 +7,13 @@ defmodule MServer.Supervisor do
 
   @manager_name MServer.EventManager
   @registry_name MServer.Registry
+  @bucket_sup_name MServer.Bucket.Supervisor
 
   def init(:ok) do
     children = [
       worker(GenEvent, [[name: @manager_name]]),
-      worker(MServer.Registry, [@manager_name, [name: @registry_name]])
+      supervisor(MServer.Bucket.Supervisor, [[name: @bucket_sup_name]]),
+      worker(MServer.Registry, [@manager_name, @bucket_sup_name, [name: @registry_name]])
     ]
 
     supervise(children, strategy: :one_for_one)
